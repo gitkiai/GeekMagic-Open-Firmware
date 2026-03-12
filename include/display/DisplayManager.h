@@ -46,4 +46,6 @@ class DisplayManager {
     static bool stopGif();
     static void update();
     static void clearScreen();
+    static void setBrightness(int percent);
+    static int getBrightness();
 };

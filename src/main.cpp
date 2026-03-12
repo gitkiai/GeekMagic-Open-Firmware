@@ -30,6 +30,7 @@
 #include "display/DisplayManager.h"
 #include "web/Webserver.h"
 #include "web/Api.h"
+#include "web/HacsApi.h"
 #include "ntp/NTPClient.h"
 #include <array>
 
@@ -137,6 +138,7 @@ void setup() {
     step++;
 
     registerApiEndpoints(webserver);
+    registerHacsEndpoints(webserver);
 
     httpUpdater.setup(&webserver->raw(), "/legacyupdate");
 

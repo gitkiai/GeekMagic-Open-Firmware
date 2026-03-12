@@ -29,6 +29,7 @@
 #include "display/Gif.h"
 
 static Gif s_gif;
+static int s_brightnessPercent = 100;
 
 extern ConfigManager configManager;
 
@@ -702,3 +703,22 @@ auto DisplayManager::update() -> void { s_gif.update(); }
  * @return void
  */
 auto DisplayManager::clearScreen() -> void { g_lcd.fillScreen(LCD_BLACK); }
+
+void DisplayManager::setBrightness(int percent) {
+    if (percent < 0) {
+        percent = 0;
+    }
+    if (percent > 100) {
+        percent = 100;
+    }
+    s_brightnessPercent = percent;
+
+    // ESP8266 analogWrite range is 0-1023
+    // Backlight is active LOW, so 0% brightness = full PWM, 100% brightness = 0 PWM
+    static constexpr int PWM_MAX = 1023;
+    int pwmValue = LCD_BACKLIGHT_ACTIVE_LOW ? PWM_MAX - (percent * PWM_MAX / 100) : (percent * PWM_MAX / 100);
+
+    analogWrite(static_cast<uint8_t>(LCD_BACKLIGHT_GPIO), pwmValue);
+}
+
+auto DisplayManager::getBrightness() -> int { return s_brightnessPercent; }
