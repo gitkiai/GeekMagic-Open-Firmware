@@ -104,7 +104,7 @@ auto SecureStorage::begin() -> bool {
  *
  * @return true on success false on failure
  */
-auto const SecureStorage::loadToMemory() -> bool {
+bool SecureStorage::loadToMemory() {
     // 2 bytes length + 4 bytes magic
     const size_t headerSize = 6;
 
@@ -167,7 +167,7 @@ auto const SecureStorage::loadToMemory() -> bool {
  *
  * @return true on success false on failure
  */
-auto const SecureStorage::flushToEEPROM() -> bool {
+bool SecureStorage::flushToEEPROM() {
     const size_t headerSize = 6;
     size_t payloadMax = _eepromSize - headerSize;
 

@@ -1259,7 +1259,7 @@ static void otaHandleStart(HTTPUpload& upload, int mode) {
 
     if (!Update.begin(place, mode)) {
         otaError = true;
-        otaStatus = Update.getErrorString();
+        otaStatus = Update.getError() ? String(Update.getError()) : "unknown error";
         Logger::error((String("Update.begin failed: ") + otaStatus).c_str(), "API::OTA");
     }
 }
@@ -1289,7 +1289,7 @@ static void otaHandleWrite(HTTPUpload& upload) {
 
         if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
             otaError = true;
-            otaStatus = Update.getErrorString();
+            otaStatus = Update.getError() ? String(Update.getError()) : "unknown error";
             Logger::error((String("Write failed: ") + otaStatus).c_str(), "API::OTA");
         }
 
@@ -1328,7 +1328,7 @@ static void otaHandleEnd(HTTPUpload& /*upload*/, int mode) {
                                             true);
         } else {
             otaError = true;
-            otaStatus = Update.getErrorString();
+            otaStatus = Update.getError() ? String(Update.getError()) : "unknown error";
         }
     }
 }

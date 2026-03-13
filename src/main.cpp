@@ -165,7 +165,7 @@ void setup() {
 
     // enable watchdog before going to loop()
     // 2 seconds should be way more than the main loop needs to do stuff
-    EspClass::wdtEnable(WDTO_2S);
+    ESP.wdtEnable(WDTO_2S);
 }
 
 void loop() {
@@ -197,5 +197,5 @@ void loop() {
         Logger::info(msgBuf);
     }
 
-    EspClass::wdtFeed();  // kick watchdog
+    ESP.wdtFeed();  // kick watchdog
 }
