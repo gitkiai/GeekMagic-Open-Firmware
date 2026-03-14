@@ -215,6 +215,12 @@ static auto requireBearerToken(Webserver* webserver) -> bool {
         return true;
     }
 
+    // Skip token check if no token has been configured yet
+    String storedToken = configManager.getApiToken();
+    if (storedToken.length() == 0) {
+        return true;
+    }
+
     if (validateBearerToken(webserver)) {
         return true;
     }
