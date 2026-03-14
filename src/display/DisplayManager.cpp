@@ -385,6 +385,13 @@ static void lcdEnsureInit() {
 
     g_lcd.setRotation(rotation);
 
+    // Flip horizontally (MX bit) after setRotation which sets MADCTL to 0x08 (RGB).
+    // MX only affects column order, no row offset change needed on 240x240 panel.
+    g_lcdBus.beginWrite();
+    ST7789_WriteCommand(ST7789_MEMORY_ACCESS_CONTROL);
+    ST7789_WriteData(0x48);  // RGB | MX
+    g_lcdBus.endWrite();
+
     Logger::info(("Width=" + String(g_lcd.width()) + " height=" + String(g_lcd.height())).c_str(), "DisplayManager");
 
     g_lcd.fillScreen(LCD_BLACK);
