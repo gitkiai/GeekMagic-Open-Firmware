@@ -179,6 +179,8 @@ void loop() {
 
     DisplayManager::update();
 
+    hacsPollPendingImage();
+
     static unsigned long last_free_heap_log = 0;
     static constexpr unsigned long FREE_HEAP_LOG_INTERVAL_MS = 10000UL;
     unsigned long now = millis();

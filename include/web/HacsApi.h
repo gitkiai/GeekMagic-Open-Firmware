@@ -23,5 +23,6 @@
 #include "web/Webserver.h"
 
 void registerHacsEndpoints(Webserver* webserver);
+void hacsPollPendingImage();
 
 #endif  // HACS_API_H

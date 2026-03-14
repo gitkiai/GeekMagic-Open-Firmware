@@ -31,6 +31,7 @@ static constexpr const char* IMAGE_DIR = "/image";
 // Current device state
 static int s_currentTheme = 0;
 static String s_currentImage;
+static String s_pendingImage;
 
 /**
  * @brief Ensure the /image directory exists on LittleFS
@@ -137,13 +138,9 @@ static void handleSet(Webserver* webserver) {
     if (server.hasArg("img")) {
         String imgPath = server.arg("img");
         s_currentImage = imgPath;
-        Logger::info(("HACS: display image " + imgPath).c_str(), "HacsApi");
-
-        if (JpegDisplay::drawFromFile(imgPath)) {
-            server.send(HTTP_CODE_OK, "text/plain", "OK");
-        } else {
-            server.send(HTTP_CODE_NOT_FOUND, "text/plain", "Image not found or decode failed");
-        }
+        s_pendingImage = imgPath;
+        Logger::info(("HACS: display image queued " + imgPath).c_str(), "HacsApi");
+        server.send(HTTP_CODE_OK, "text/plain", "OK");
         return;
     }
 
@@ -310,4 +307,17 @@ void registerHacsEndpoints(Webserver* webserver) {
     webserver->raw().on("/delete", HTTP_GET, [webserver]() { handleDeleteFile(webserver); });
 
     Logger::info("HACS compatibility endpoints registered", "HacsApi");
+}
+
+void hacsPollPendingImage() {
+    if (s_pendingImage.length() == 0) {
+        return;
+    }
+
+    String path = s_pendingImage;
+    s_pendingImage = "";
+
+    if (!JpegDisplay::drawFromFile(path)) {
+        Logger::error(("HACS: deferred image decode failed: " + path).c_str(), "HacsApi");
+    }
 }
