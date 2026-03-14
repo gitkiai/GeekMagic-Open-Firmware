@@ -25,6 +25,7 @@
 #include <LittleFS.h>
 #include <Arduino_GFX_Library.h>
 #include <Logger.h>
+#include <new>
 
 static File s_jpegFile;
 static bool s_jpegFileOpen = false;
@@ -88,8 +89,6 @@ static int jpegDraw(JPEGDRAW* pDraw) {
     return 1;
 }
 
-static JPEGDEC s_jpeg;
-
 bool JpegDisplay::drawFromFile(const String& path) {
     String filePath = path;
     if (!filePath.startsWith("/")) {
@@ -101,19 +100,27 @@ bool JpegDisplay::drawFromFile(const String& path) {
         return false;
     }
 
-    if (s_jpeg.open(filePath.c_str(), jpegOpen, jpegClose, jpegRead, jpegSeek, jpegDraw) <= 0) {
-        Logger::error(("Failed to open JPEG: " + filePath).c_str(), "JpegDisplay");
+    JPEGDEC* jpeg = new (std::nothrow) JPEGDEC();
+    if (jpeg == nullptr) {
+        Logger::error("JPEG: not enough memory", "JpegDisplay");
         return false;
     }
 
-    int imgW = s_jpeg.getWidth();
-    int imgH = s_jpeg.getHeight();
+    if (jpeg->open(filePath.c_str(), jpegOpen, jpegClose, jpegRead, jpegSeek, jpegDraw) <= 0) {
+        Logger::error(("Failed to open JPEG: " + filePath).c_str(), "JpegDisplay");
+        delete jpeg;
+        return false;
+    }
+
+    int imgW = jpeg->getWidth();
+    int imgH = jpeg->getHeight();
 
     Logger::info(("JPEG: " + String(imgW) + "x" + String(imgH)).c_str(), "JpegDisplay");
 
-    s_jpeg.setPixelType(RGB565_LITTLE_ENDIAN);
-    bool ok = s_jpeg.decode(0, 0, 0) == 1;
-    s_jpeg.close();
+    jpeg->setPixelType(RGB565_LITTLE_ENDIAN);
+    bool ok = jpeg->decode(0, 0, 0) == 1;
+    jpeg->close();
+    delete jpeg;
 
     if (ok) {
         Logger::info("JPEG displayed", "JpegDisplay");

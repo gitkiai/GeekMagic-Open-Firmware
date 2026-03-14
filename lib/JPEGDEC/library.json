@@ -1,0 +1,5 @@
+{
+    "name": "JPEGDEC",
+    "version": "2.1.0",
+    "description": "JPEG decoder with reduced buffer sizes for ESP8266"
+}
