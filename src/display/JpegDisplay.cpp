@@ -100,8 +100,6 @@ bool JpegDisplay::drawFromFile(const String& path) {
         return false;
     }
 
-    DisplayManager::stopGif();
-
     JPEGDEC* jpeg = new (std::nothrow) JPEGDEC();
     if (jpeg == nullptr) {
         Logger::error("JPEG: not enough memory", "JpegDisplay");

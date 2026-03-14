@@ -177,8 +177,6 @@ void loop() {
         ntpClient->loop();
     }
 
-    DisplayManager::update();
-
     hacsPollPendingImage();
 
     static unsigned long last_free_heap_log = 0;

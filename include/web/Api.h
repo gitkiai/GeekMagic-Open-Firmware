@@ -30,11 +30,6 @@ void handleReboot(Webserver* webserver);
 void handleOtaStatus(Webserver* webserver);
 void handleOtaCancel(Webserver* webserver);
 
-void handleGifUpload(Webserver* webserver);
-void handleListGifs(Webserver* webserver);
-void handlePlayGif(Webserver* webserver);
-void handleStopGif(Webserver* webserver);
-
 void handleWifiScan(Webserver* webserver);
 void handleWifiConnect(Webserver* webserver);
 void handleWifiStatus(Webserver* webserver);
@@ -46,9 +41,5 @@ void handleNtpConfigSet(Webserver* webserver);
 
 void handleTokenCheck(Webserver* webserver);
 void handleTokenSave(Webserver* webserver);
-
-void handleLogsGet(Webserver* webserver);
-void handleLogsDownload(Webserver* webserver);
-void handleLogsClear(Webserver* webserver);
 
 #endif  // API_H
