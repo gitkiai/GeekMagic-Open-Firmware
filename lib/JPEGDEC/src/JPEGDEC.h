@@ -61,7 +61,7 @@
 #define DCTSIZE 64
 #define MAX_MCU_COUNT 6
 #define MAX_COMPS_IN_SCAN 4
-#define MAX_BUFFERED_PIXELS 240
+#define MAX_BUFFERED_PIXELS 480
 #define MCU_SKIP -8
 
 // Decoder options
