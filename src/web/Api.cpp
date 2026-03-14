@@ -1371,24 +1371,38 @@ void handleLogsGet(Webserver* webserver) {
         return;
     }
 
-    JsonDocument doc;
-    JsonArray logsArray = doc["logs"].to<JsonArray>();
-
     size_t count = Logger::getLogCount();
-    for (size_t i = 0; i < count; i++) {
-        const char* entry = Logger::getLogEntry(i);
-        if (entry != nullptr) {
-            logsArray.add(entry);
-        }
-    }
-
-    doc["count"] = count;
-
-    String json;
-    serializeJson(doc, json);
 
     setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    webserver->raw().setContentLength(CONTENT_LENGTH_UNKNOWN);
+    webserver->raw().send(HTTP_CODE_OK, "application/json", "");
+
+    webserver->raw().sendContent("{\"count\":");
+    webserver->raw().sendContent(String(count));
+    webserver->raw().sendContent(",\"logs\":[");
+
+    for (size_t i = 0; i < count; i++) {
+        const char* entry = Logger::getLogEntry(i);
+        if (entry == nullptr) continue;
+
+        if (i > 0) webserver->raw().sendContent(",");
+
+        // JSON-escape the entry inline
+        String escaped = "\"";
+        const char* p = entry;
+        while (*p) {
+            if (*p == '"') escaped += "\\\"";
+            else if (*p == '\\') escaped += "\\\\";
+            else escaped += *p;
+            p++;
+        }
+        escaped += "\"";
+        webserver->raw().sendContent(escaped);
+        yield();
+    }
+
+    webserver->raw().sendContent("]}");
+    webserver->raw().sendContent("");  // end chunked
 }
 
 /**
@@ -1400,11 +1414,23 @@ void handleLogsDownload(Webserver* webserver) {
         return;
     }
 
-    String logs = Logger::getLogsAsString();
+    size_t count = Logger::getLogCount();
 
     setCorsHeaders(webserver);
     webserver->raw().sendHeader("Content-Disposition", "attachment; filename=\"logs.log\"");
-    webserver->raw().send(HTTP_CODE_OK, "text/plain", logs);
+    webserver->raw().setContentLength(CONTENT_LENGTH_UNKNOWN);
+    webserver->raw().send(HTTP_CODE_OK, "text/plain", "");
+
+    for (size_t i = 0; i < count; i++) {
+        const char* entry = Logger::getLogEntry(i);
+        if (entry != nullptr) {
+            webserver->raw().sendContent(entry);
+            webserver->raw().sendContent("\n");
+        }
+        yield();
+    }
+
+    webserver->raw().sendContent("");  // end chunked
 }
 
 /**

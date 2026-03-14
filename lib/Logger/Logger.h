@@ -24,7 +24,7 @@
 
 enum LogLevel { LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR };
 
-static constexpr size_t LOG_BUFFER_MAX_ENTRIES = 50;
+static constexpr size_t LOG_BUFFER_MAX_ENTRIES = 20;
 static constexpr size_t LOG_ENTRY_MAX_LEN = 128;
 
 class Logger {

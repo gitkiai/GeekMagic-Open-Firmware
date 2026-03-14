@@ -113,7 +113,7 @@ void Logger::addToBuffer(const char* entry) {
  */
 String Logger::getLogsAsString() {
     String result;
-    result.reserve(_count * 64);
+    result.reserve(_count * LOG_ENTRY_MAX_LEN);
     for (size_t i = 0; i < _count; i++) {
         result += getLogEntry(i);
         result += '\n';
