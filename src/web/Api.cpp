@@ -210,6 +210,11 @@ static auto validateBearerToken(Webserver* webserver) -> bool {
  * @return true if token is valid false otherwise
  */
 static auto requireBearerToken(Webserver* webserver) -> bool {
+    // Skip token check in AP mode (captive portal has no token)
+    if (wifiManager != nullptr && wifiManager->isApMode()) {
+        return true;
+    }
+
     if (validateBearerToken(webserver)) {
         return true;
     }
