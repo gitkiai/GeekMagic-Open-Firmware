@@ -253,52 +253,6 @@ def ota_cancel(h: APIHandler):
     h.json_response({"status": "cancelled"})
 
 
-@router.route("GET", "/api/v1/gif")
-def gif_list(h: APIHandler):
-    if not check_auth(h):
-        return
-    time.sleep(h.state.get("d.getActionDelay", 0))
-    h.json_response(h.state.get("gif.list"))
-
-
-@router.route("POST", "/api/v1/gif")
-def gif_upload(h: APIHandler):
-    if not check_auth(h):
-        return
-    data = h.read_json()
-    name = data.get("name", "uploaded.gif") if data else "uploaded.gif"
-    h.json_response({"status": "success", "filename": name})
-
-
-@router.route("DELETE", "/api/v1/gif")
-def gif_delete(h: APIHandler):
-    if not check_auth(h):
-        return
-    data = h.read_json()
-    if not data or "name" not in data:
-        return h.json_response({"error": "missing name"}, 400)
-    h.json_response({"status": "success", "file": data["name"]})
-
-
-@router.route("POST", "/api/v1/gif/play")
-def gif_play(h: APIHandler):
-    if not check_auth(h):
-        return
-    data = h.read_json()
-    if not data:
-        return h.json_response({"error": "invalid json"}, 400)
-    h.state.set("gif.playing", data.get("name"))
-    h.json_response({"status": "playing"})
-
-
-@router.route("POST", "/api/v1/gif/stop")
-def gif_stop(h: APIHandler):
-    if not check_auth(h):
-        return
-    h.state.set("gif.playing", None)
-    h.json_response({"status": "stopped"})
-
-
 @router.route("POST", "/api/v1/reboot")
 def reboot(h: APIHandler):
     if not check_auth(h):
@@ -387,16 +341,6 @@ if __name__ == "__main__":
         "wifi.networks": [
             {"ssid": "ABC", "rssi": 0, "enc": 7},
             {"ssid": "Hi There!", "rssi": -50, "enc": 5},
-        ],
-    })
-
-    state.set("gif.list", {
-        "usedBytes": 1500,
-        "totalBytes": 50000,
-        "freeBytes": 48500,
-        "files": [
-            {"name": "test.gif", "size": 1000},
-            {"name": "[BIG SHOT].gif", "size": 500},
         ],
     })
 

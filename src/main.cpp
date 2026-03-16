@@ -147,11 +147,9 @@ void setup() {
     webserver->serveStaticC("/footer.html", "/web/footer.html", "text/html");
     webserver->serveStaticC("/index.html", "/web/index.html", "text/html");
     webserver->serveStaticC("/update.html", "/web/update.html", "text/html");
-    webserver->serveStaticC("/gif_upload.html", "/web/gif_upload.html", "text/html");
     webserver->serveStaticC("/wifi.html", "/web/wifi.html", "text/html");
     webserver->serveStaticC("/token.html", "/web/token.html", "text/html");
     webserver->serveStaticC("/ntp.html", "/web/ntp.html", "text/html");
-    webserver->serveStaticC("/logs.html", "/web/logs.html", "text/html");
     webserver->serveStaticC("/config.json", "/config.json", "application/json");
 
     webserver->registerStaticDir("/web/css", "/css", "text/css");
