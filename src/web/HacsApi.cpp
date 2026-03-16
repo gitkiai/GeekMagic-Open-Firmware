@@ -20,6 +20,7 @@
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <Logger.h>
+#include <ArduinoJson.h>
 
 #include "web/Webserver.h"
 #include "web/HacsApi.h"
@@ -60,17 +61,15 @@ static void clearAllImages() {
  * Returns: {"theme": N, "brt": N, "img": "/image/filename.jpg"}
  */
 static void handleAppJson(Webserver* webserver) {
-    String json = "{\"theme\":";
-    json += String(s_currentTheme);
-    json += ",\"brt\":";
-    json += String(DisplayManager::getBrightness());
+    JsonDocument doc;
+    doc["theme"] = s_currentTheme;
+    doc["brt"] = DisplayManager::getBrightness();
     if (s_currentImage.length() > 0) {
-        json += ",\"img\":\"";
-        json += s_currentImage;
-        json += "\"";
+        doc["img"] = s_currentImage;
     }
-    json += "}";
 
+    String json;
+    serializeJson(doc, json);
     webserver->raw().send(HTTP_CODE_OK, "application/json", json);
 }
 
@@ -83,12 +82,12 @@ static void handleSpaceJson(Webserver* webserver) {
     FSInfo fsInfo;
     LittleFS.info(fsInfo);
 
-    String json = "{\"total\":";
-    json += String(fsInfo.totalBytes);
-    json += ",\"free\":";
-    json += String(fsInfo.totalBytes - fsInfo.usedBytes);
-    json += "}";
+    JsonDocument doc;
+    doc["total"] = fsInfo.totalBytes;
+    doc["free"] = fsInfo.totalBytes - fsInfo.usedBytes;
 
+    String json;
+    serializeJson(doc, json);
     webserver->raw().send(HTTP_CODE_OK, "application/json", json);
 }
 
@@ -98,10 +97,11 @@ static void handleSpaceJson(Webserver* webserver) {
  * Returns: {"brt": "N"} (note: string value, matching original firmware)
  */
 static void handleBrtJson(Webserver* webserver) {
-    String json = "{\"brt\":\"";
-    json += String(DisplayManager::getBrightness());
-    json += "\"}";
+    JsonDocument doc;
+    doc["brt"] = String(DisplayManager::getBrightness());
 
+    String json;
+    serializeJson(doc, json);
     webserver->raw().send(HTTP_CODE_OK, "application/json", json);
 }
 

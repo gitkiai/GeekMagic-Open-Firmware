@@ -54,6 +54,33 @@ static constexpr size_t NTP_CONFIG_DOC_SIZE = 512;
 static constexpr int BEARER_LEN = 7;
 
 /**
+ * @brief Serialize a JsonDocument and send it as an HTTP JSON response with CORS headers
+ * @param webserver Pointer to the Webserver instance
+ * @param code HTTP status code
+ * @param doc The JsonDocument to serialize
+ */
+static void sendJsonResponse(Webserver* webserver, int code, JsonDocument& doc) {
+    String json;
+    serializeJson(doc, json);
+    setCorsHeaders(webserver);
+    webserver->raw().send(code, "application/json", json);
+}
+
+/**
+ * @brief Send a simple JSON response with status and message fields
+ * @param webserver Pointer to the Webserver instance
+ * @param code HTTP status code
+ * @param status The status string
+ * @param message The message string
+ */
+static void sendJsonStatus(Webserver* webserver, int code, const char* status, const char* message) {
+    JsonDocument doc;
+    doc["status"] = status;
+    doc["message"] = message;
+    sendJsonResponse(webserver, code, doc);
+}
+
+/**
  * @brief Register API endpoints for the webserver
  * @param webserver Pointer to the Webserver instance
  *
@@ -189,15 +216,7 @@ static auto requireBearerToken(Webserver* webserver) -> bool {
         return true;
     }
 
-    JsonDocument doc;
-    doc["status"] = "error";
-    doc["message"] = "Invalid or missing token";
-
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_UNAUTHORIZED, "application/json", json);
+    sendJsonStatus(webserver, HTTP_CODE_UNAUTHORIZED, "error", "Invalid or missing token");
 
     Logger::warn(
         ("Unauthorized request from " + webserver->raw().client().remoteIP().toString()).c_str(), "API");
@@ -216,15 +235,7 @@ void handleTokenCheck(Webserver* webserver) {
         return;
     }
 
-    JsonDocument doc;
-    doc["status"] = "ok";
-    doc["message"] = "Token is valid";
-
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    sendJsonStatus(webserver, HTTP_CODE_OK, "ok", "Token is valid");
 }
 
 /**
@@ -239,16 +250,7 @@ void handleTokenSave(Webserver* webserver) {
     }
 
     if (!webserver->raw().hasArg("plain") || webserver->raw().arg("plain").length() == 0) {
-        JsonDocument doc;
-        doc["status"] = "error";
-        doc["message"] = "Missing JSON body";
-
-        String json;
-        serializeJson(doc, json);
-
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "Missing JSON body");
         return;
     }
 
@@ -257,35 +259,15 @@ void handleTokenSave(Webserver* webserver) {
     DeserializationError err = deserializeJson(ddoc, body);
 
     if (err) {
-        JsonDocument doc;
-        doc["status"] = "error";
-        doc["message"] = "Invalid JSON";
-
-        String json;
-        serializeJson(doc, json);
-
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "Invalid JSON");
         Logger::warn("Attempt to save API token with invalid JSON", "API");
-
         return;
     }
 
     const char* newToken = ddoc["token"] | "";
 
     if (strlen(newToken) == 0) {
-        JsonDocument doc;
-        doc["status"] = "error";
-        doc["message"] = "token field is required";
-
-        String json;
-        serializeJson(doc, json);
-
-        setCorsHeaders(webserver);
-
-        webserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "token field is required");
         Logger::warn("Attempt to save empty API token", "API");
         return;
     }
@@ -293,16 +275,7 @@ void handleTokenSave(Webserver* webserver) {
     configManager.setApiToken(newToken);
     configManager.save();
 
-    JsonDocument doc;
-    doc["status"] = "ok";
-    doc["message"] = "Token saved successfully";
-
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
-
+    sendJsonStatus(webserver, HTTP_CODE_OK, "ok", "Token saved successfully");
     Logger::info("API token updated", "API");
 }
 
@@ -321,11 +294,7 @@ void handleOtaStatus(Webserver* webserver) {
     doc["error"] = otaError;
     doc["message"] = otaStatus;
 
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    sendJsonResponse(webserver, HTTP_CODE_OK, doc);
 }
 
 /**
@@ -339,15 +308,7 @@ void handleOtaCancel(Webserver* webserver) {
     otaCancelRequested = true;
     otaStatus = "Cancel requested";
 
-    JsonDocument doc;
-    doc["status"] = "cancelling";
-    doc["message"] = "Cancel request received";
-
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    sendJsonStatus(webserver, HTTP_CODE_OK, "cancelling", "Cancel request received");
 }
 
 /**
@@ -361,15 +322,9 @@ void handleReboot(Webserver* webserver) {
         return;
     }
 
-    JsonDocument doc;
     int constexpr rebootDelayMs = 1000;
 
-    doc["status"] = "rebooting";
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    sendJsonStatus(webserver, HTTP_CODE_OK, "rebooting", "Device is rebooting");
 
     delay(rebootDelayMs);
     ESP.restart();  // NOLINT(readability-static-accessed-through-instance)
@@ -383,31 +338,19 @@ void handleNtpSync(Webserver* webserver) {
         return;
     }
 
-    JsonDocument doc;
-
     if (ntpClient == nullptr) {
-        doc["status"] = "error";
-        doc["message"] = "NTP client not initialized";
-
-        String json;
-        serializeJson(doc, json);
-
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_INTERNAL_ERROR, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_INTERNAL_ERROR, "error", "NTP client not initialized");
         return;
     }
 
     bool syncOk = ntpClient->syncNow();
+
+    JsonDocument doc;
     doc["status"] = syncOk ? "ok" : "error";
     doc["lastStatus"] = ntpClient->lastStatus();
     doc["lastSyncTime"] = ntpClient->lastSyncTime();
 
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    sendJsonResponse(webserver, HTTP_CODE_OK, doc);
 }
 
 /**
@@ -418,29 +361,17 @@ void handleNtpStatus(Webserver* webserver) {
         return;
     }
 
-    JsonDocument doc;
-
     if (ntpClient == nullptr) {
-        doc["status"] = "error";
-        doc["message"] = "NTP client not initialized";
-
-        String json;
-        serializeJson(doc, json);
-
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_INTERNAL_ERROR, "application/json", json);
+        sendJsonStatus(webserver, HTTP_CODE_INTERNAL_ERROR, "error", "NTP client not initialized");
         return;
     }
 
+    JsonDocument doc;
     doc["lastOk"] = ntpClient->lastSyncOk();
     doc["lastStatus"] = ntpClient->lastStatus();
     doc["lastSyncTime"] = ntpClient->lastSyncTime();
 
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    sendJsonResponse(webserver, HTTP_CODE_OK, doc);
 }
 
 /**
@@ -454,11 +385,7 @@ void handleNtpConfigGet(Webserver* webserver) {
     JsonDocument doc;
     doc["ntp_server"] = configManager.getNtpServer();
 
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    sendJsonResponse(webserver, HTTP_CODE_OK, doc);
 }
 
 /**
@@ -470,16 +397,7 @@ void handleNtpConfigSet(Webserver* webserver) {
     }
 
     if (!webserver->raw().hasArg("plain") || webserver->raw().arg("plain").length() == 0) {
-        JsonDocument doc;
-        doc["status"] = "error";
-        doc["message"] = "Missing JSON body";
-
-        String json;
-
-        serializeJson(doc, json);
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "Missing JSON body");
         return;
     }
 
@@ -488,53 +406,24 @@ void handleNtpConfigSet(Webserver* webserver) {
     DeserializationError err = deserializeJson(ddoc, body);
 
     if (err) {
-        JsonDocument doc;
-        doc["status"] = "error";
-        doc["message"] = "Invalid JSON";
-
-        String json;
-        serializeJson(doc, json);
-
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "Invalid JSON");
         return;
     }
 
     const char* server = ddoc["ntp_server"] | "";
 
     if (strlen(server) == 0) {
-        JsonDocument doc;
-        doc["status"] = "error";
-        doc["message"] = "ntp_server missing";
-
-        String json;
-        serializeJson(doc, json);
-
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "ntp_server missing");
         return;
     }
 
     configManager.setNtpServer(server);
 
     if (!configManager.save()) {
-        JsonDocument doc;
-        doc["status"] = "error";
-        doc["message"] = "Failed to save config";
-
-        String json;
-
-        serializeJson(doc, json);
-
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_INTERNAL_ERROR, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_INTERNAL_ERROR, "error", "Failed to save config");
         return;
     }
 
-    // optionally trigger a sync
     if (ntpClient != nullptr) {
         ntpClient->syncNow();
     }
@@ -542,11 +431,8 @@ void handleNtpConfigSet(Webserver* webserver) {
     JsonDocument doc;
     doc["status"] = "ok";
     doc["ntp_server"] = server;
-    String json;
-    serializeJson(doc, json);
 
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    sendJsonResponse(webserver, HTTP_CODE_OK, doc);
 }
 
 /**
@@ -563,17 +449,7 @@ void handleOtaUpload(Webserver* webserver, int mode) {
         otaError = true;
         otaStatus = "Unauthorized";
 
-        JsonDocument doc;
-        doc["status"] = "error";
-        doc["message"] = "Invalid or missing token";
-
-        String json;
-
-        serializeJson(doc, json);
-        setCorsHeaders(webserver);
-
-        webserver->raw().send(HTTP_CODE_UNAUTHORIZED, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_UNAUTHORIZED, "error", "Invalid or missing token");
         return;
     }
 
@@ -603,37 +479,16 @@ void handleOtaUpload(Webserver* webserver, int mode) {
  */
 void handleOtaFinished(Webserver* webserver) {
     if (!validateBearerToken(webserver)) {
-        JsonDocument doc;
-        doc["status"] = "error";
-        doc["message"] = "Invalid or missing token";
-
-        String json;
-        serializeJson(doc, json);
-        setCorsHeaders(webserver);
-
-        webserver->raw().send(HTTP_CODE_UNAUTHORIZED, "application/json", json);
-
+        sendJsonStatus(webserver, HTTP_CODE_UNAUTHORIZED, "error", "Invalid or missing token");
         return;
     }
 
-    JsonDocument doc;
     int constexpr rebootDelayMs = 5000;
-
-    doc["status"] = "Upload successful";
-    doc["message"] = otaStatus;
-
-    if (otaError) {
-        doc["status"] = "Error";
-    }
 
     otaInProgress = false;
     otaCancelRequested = false;
 
-    String json;
-    serializeJson(doc, json);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+    sendJsonStatus(webserver, HTTP_CODE_OK, otaError ? "Error" : "Upload successful", otaStatus.c_str());
 
     if (!otaError) {
         delay(rebootDelayMs);
@@ -676,17 +531,7 @@ void handleWifiConnect(Webserver* webserver) {
     DeserializationError err = deserializeJson(doc, body);
 
     if (err) {
-        JsonDocument resp;
-
-        resp["status"] = "error";
-        resp["message"] = "invalid json";
-
-        String jsonOut;
-        serializeJson(resp, jsonOut);
-
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_INTERNAL_ERROR, "application/json", jsonOut);
-
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "invalid json");
         return;
     }
 
@@ -694,18 +539,7 @@ void handleWifiConnect(Webserver* webserver) {
     const char* password = doc["password"] | "";
 
     if (strlen(ssid) == 0) {
-        JsonDocument resp;
-
-        resp["status"] = "error";
-        resp["message"] = "missing ssid";
-
-        String jsonOut;
-
-        serializeJson(resp, jsonOut);
-
-        setCorsHeaders(webserver);
-        webserver->raw().send(HTTP_CODE_INTERNAL_ERROR, "application/json", jsonOut);
-
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "missing ssid");
         return;
     }
 
@@ -715,7 +549,6 @@ void handleWifiConnect(Webserver* webserver) {
     }
 
     JsonDocument resp;
-
     resp["status"] = connectOk ? "connected" : "error";
     resp["ssid"] = ssid;
 
@@ -723,17 +556,11 @@ void handleWifiConnect(Webserver* webserver) {
         resp["ip"] = wifiManager->getIP().toString();
         configManager.setWiFi(ssid, password);
         configManager.save();
-    }
-
-    if (!connectOk) {
+    } else {
         resp["message"] = "failed to connect";
     }
 
-    String jsonOut;
-    serializeJson(resp, jsonOut);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", jsonOut);
+    sendJsonResponse(webserver, HTTP_CODE_OK, resp);
 }
 
 /**
@@ -752,11 +579,7 @@ void handleWifiStatus(Webserver* webserver) {
     resp["ssid"] = connected ? WiFiManager::getConnectedSSID() : "";
     resp["ip"] = connected ? wifiManager->getIP().toString() : "";
 
-    String jsonOut;
-    serializeJson(resp, jsonOut);
-
-    setCorsHeaders(webserver);
-    webserver->raw().send(HTTP_CODE_OK, "application/json", jsonOut);
+    sendJsonResponse(webserver, HTTP_CODE_OK, resp);
 }
 
 /**

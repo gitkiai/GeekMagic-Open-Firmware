@@ -71,8 +71,6 @@ class Webserver {
     std::vector<char*> _staticAllocPools;
     std::vector<char*> _staticAllocFallbackPtrs;
 
-    void logHeapIfNeeded();
-
     static String guessContentType(const String& path);
 };
 

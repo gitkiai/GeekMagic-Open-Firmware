@@ -18,6 +18,7 @@
  */
 
 #include <array>
+#include <memory>
 #include <EEPROM.h>
 #include <Logger.h>
 #include <ESP8266WiFi.h>
@@ -130,7 +131,7 @@ bool SecureStorage::loadToMemory() {
         return false;
     }
 
-    char* buf = new char[len + 1];
+    std::unique_ptr<char[]> buf(new char[len + 1]);
     for (uint16_t i = 0; i < len; ++i) {
         buf[i] = static_cast<char>(EEPROM.read(static_cast<int>(headerSize + i)));
     }
@@ -144,18 +145,14 @@ bool SecureStorage::loadToMemory() {
         buf[i] ^= key[static_cast<size_t>(i) % KEY_LEN];
     }
 
-    DeserializationError err = deserializeJson(_doc, buf);
+    DeserializationError err = deserializeJson(_doc, buf.get());
 
     if (err) {
         Logger::warn(String("Failed to parse NVS JSON: " + String(err.c_str())).c_str(), "SecureStorage");
         _doc.clear();
 
-        delete[] buf;
-
         return false;
     }
-
-    delete[] buf;
 
     Logger::info("NVS data loaded from EEPROM", "SecureStorage");
 
