@@ -176,16 +176,16 @@ The firmware uses the **Arduino_GFX library** with a custom ST7789 display drive
     - Full screen fills: `fillScreen(color)`
     - Direct SPI writes are batched between `beginWrite()` and `endWrite()` calls
 
-3. **GIF playback**:
-    - Managed via the `Gif` class instance `s_gif`
-    - Supports full-screen GIF playback with optional duration limits
-    - Can be stopped at any time via `DisplayManager::stopGif()`
+3. **JPEG image display**:
+    - Decoded and rendered via the JPEGDEC library
+    - Supports optional horizontal mirroring (configurable via `jpeg_mirror`)
+    - Frames are drawn row-by-row with direct SPI writes for performance
 
 4. **Performance optimizations**:
     - **Hardware SPI**: Uses ESP8266's hardware SPI peripheral (40 MHz) for efficient transfers
     - **Batch writes**: Commands and data are batched between `beginWrite()`/`endWrite()` calls
     - **Yield calls**: `yield()` is called during long operations to prevent watchdog timeout
-    - **Direct streaming**: GIF frames are streamed directly without intermediate buffering
+    - **Row-by-row rendering**: JPEG image rows are decoded and pushed directly via SPI
 
 ### Color format
 
@@ -260,7 +260,8 @@ Note: The Wi-Fi credentials and API token in config.json are migrated to EEPROM 
 - `wifi_ssid`: Your WiFi network name
 - `wifi_password`: Your WiFi password
 - `api_token`: Bearer token for API authentication
-- `lcd_rotation`: Display rotation setting
+- `lcd_rotation`: Display rotation (0-7, default 4 for HelloCubic, 0 for SmallTV)
+- `jpeg_mirror`: Horizontal JPEG mirroring (`true`/`false`, default `true`)
 - `ntp_server`: NTP server for time synchronization
 
 Security of stored secrets:
