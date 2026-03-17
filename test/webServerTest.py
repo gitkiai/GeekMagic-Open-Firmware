@@ -253,6 +253,37 @@ def ota_cancel(h: APIHandler):
     h.json_response({"status": "cancelled"})
 
 
+@router.route("GET", "/api/v1/display/config")
+def display_config_get(h: APIHandler):
+    if not check_auth(h):
+        return
+    time.sleep(h.state.get("d.getActionDelay", 0))
+    h.json_response({
+        "lcd_rotation": h.state.get("display.lcd_rotation"),
+        "jpeg_mirror": h.state.get("display.jpeg_mirror"),
+    })
+
+
+@router.route("POST", "/api/v1/display/config")
+def display_config_set(h: APIHandler):
+    if not check_auth(h):
+        return
+    data = h.read_json()
+    if data is None:
+        return h.json_response({"error": "invalid json"}, 400)
+
+    if "lcd_rotation" in data:
+        h.state.set("display.lcd_rotation", data["lcd_rotation"])
+    if "jpeg_mirror" in data:
+        h.state.set("display.jpeg_mirror", data["jpeg_mirror"])
+
+    h.json_response({
+        "status": "ok",
+        "lcd_rotation": h.state.get("display.lcd_rotation"),
+        "jpeg_mirror": h.state.get("display.jpeg_mirror"),
+    })
+
+
 @router.route("POST", "/api/v1/reboot")
 def reboot(h: APIHandler):
     if not check_auth(h):
@@ -343,6 +374,9 @@ if __name__ == "__main__":
             {"ssid": "Hi There!", "rssi": -50, "enc": 5},
         ],
     })
+
+    state.set("display.lcd_rotation", 4)
+    state.set("display.jpeg_mirror", True)
 
     state.set("auth.token", "test-token")
 

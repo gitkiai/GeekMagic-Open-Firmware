@@ -137,6 +137,18 @@ void registerApiEndpoints(Webserver* webserver) {
     // @openapi {post} /ota/cancel version=v1 group=OTA summary="Cancel OTA" requiresAuth=true responses=200:application/json,401:application/json
     webserver->raw().on("/api/v1/ota/cancel", HTTP_POST, [webserver]() { handleOtaCancel(webserver); });
 
+    // @openapi {get} /display/config version=v1 group=Display summary="Get display configuration" requiresAuth=true
+    // responses=200:application/json,401:application/json
+    webserver->raw().on("/api/v1/display/config", HTTP_GET,
+                        [webserver]() { handleDisplayConfigGet(webserver); });
+
+    // @openapi {post} /display/config version=v1 group=Display summary="Set display configuration" requiresAuth=true
+    // requestBody=application/json requestBodySchema=lcd_rotation:integer,jpeg_mirror:boolean
+    // example={"lcd_rotation":4,"jpeg_mirror":true}
+    // responses=200:application/json,400:application/json,401:application/json
+    webserver->raw().on("/api/v1/display/config", HTTP_POST,
+                        [webserver]() { handleDisplayConfigSet(webserver); });
+
     // @openapi {get} /token/check version=v1 group=Authentication summary="Check bearer token validity"
     // requiresAuth=true responses=200:application/json,401:application/json
     webserver->raw().on("/api/v1/token/check", HTTP_GET, [webserver]() { handleTokenCheck(webserver); });
@@ -708,4 +720,57 @@ static void otaHandleAborted(HTTPUpload& /*upload*/) {
 
     DisplayManager::drawTextWrapped(OTA_TEXT_X_OFFSET, OTA_TEXT_Y_OFFSET, "Aborted", 2, LCD_WHITE, LCD_BLACK, true);
     DisplayManager::drawLoadingBar(0.0F, OTA_LOADING_Y_OFFSET);
+}
+
+void handleDisplayConfigGet(Webserver* webserver) {
+    if (!requireBearerToken(webserver)) {
+        return;
+    }
+
+    JsonDocument doc;
+    doc["lcd_rotation"] = configManager.getLCDRotation();
+    doc["jpeg_mirror"] = configManager.getJpegMirror();
+
+    sendJsonResponse(webserver, HTTP_CODE_OK, doc);
+}
+
+void handleDisplayConfigSet(Webserver* webserver) {
+    if (!requireBearerToken(webserver)) {
+        return;
+    }
+
+    if (!webserver->raw().hasArg("plain") || webserver->raw().arg("plain").length() == 0) {
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "Missing JSON body");
+        return;
+    }
+
+    String body = webserver->raw().arg("plain");
+    JsonDocument ddoc;
+    DeserializationError err = deserializeJson(ddoc, body);
+
+    if (err) {
+        sendJsonStatus(webserver, HTTP_CODE_BAD_REQUEST, "error", "Invalid JSON");
+        return;
+    }
+
+    if (ddoc.containsKey("lcd_rotation")) {
+        configManager.setLCDRotation(ddoc["lcd_rotation"].as<uint8_t>());
+    }
+
+    if (ddoc.containsKey("jpeg_mirror")) {
+        configManager.setJpegMirror(ddoc["jpeg_mirror"].as<bool>());
+    }
+
+    if (!configManager.save()) {
+        sendJsonStatus(webserver, HTTP_CODE_INTERNAL_ERROR, "error", "Failed to save config");
+        return;
+    }
+
+    JsonDocument doc;
+    doc["status"] = "ok";
+    doc["lcd_rotation"] = configManager.getLCDRotation();
+    doc["jpeg_mirror"] = configManager.getJpegMirror();
+
+    sendJsonResponse(webserver, HTTP_CODE_OK, doc);
+    Logger::info("Display configuration updated", "API");
 }

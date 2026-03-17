@@ -68,6 +68,7 @@ auto ConfigManager::load() -> bool {
     String ntp_server_cfg = doc["ntp_server"] | "";
 
     this->lcd_rotation = doc["lcd_rotation"] | lcd_rotation;
+    this->jpeg_mirror = doc["jpeg_mirror"] | jpeg_mirror;
 
     String nvs_ssid = secure.get("wifi_ssid", "");
     String nvs_password = secure.get("wifi_password", "");
@@ -136,6 +137,12 @@ auto ConfigManager::getApiToken() const -> const char* { return api_token.c_str(
  */
 auto ConfigManager::getLCDRotation() const -> uint8_t { return lcd_rotation; }
 
+auto ConfigManager::getJpegMirror() const -> bool { return jpeg_mirror; }
+
+auto ConfigManager::setJpegMirror(bool mirror) -> void { jpeg_mirror = mirror; }
+
+auto ConfigManager::setLCDRotation(uint8_t rotation) -> void { lcd_rotation = rotation; }
+
 /**
  * @brief Set WiFi credentials in memory
  * @param newSsid The SSID
@@ -192,6 +199,7 @@ auto ConfigManager::save() -> bool {
     secure.put("wifi_password", this->getPassword());
 
     doc["lcd_rotation"] = lcd_rotation;
+    doc["jpeg_mirror"] = jpeg_mirror;
     if (!this->ntp_server.empty()) {
         doc["ntp_server"] = this->ntp_server.c_str();
     }

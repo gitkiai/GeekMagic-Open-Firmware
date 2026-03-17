@@ -42,4 +42,7 @@ void handleNtpConfigSet(Webserver* webserver);
 void handleTokenCheck(Webserver* webserver);
 void handleTokenSave(Webserver* webserver);
 
+void handleDisplayConfigGet(Webserver* webserver);
+void handleDisplayConfigSet(Webserver* webserver);
+
 #endif  // API_H

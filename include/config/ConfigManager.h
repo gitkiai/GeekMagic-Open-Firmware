@@ -50,6 +50,9 @@ class ConfigManager {
     const char* getApiToken() const;
     void setApiToken(const char* newApiToken);
     uint8_t getLCDRotation() const;
+    bool getJpegMirror() const;
+    void setJpegMirror(bool mirror);
+    void setLCDRotation(uint8_t rotation);
     uint32_t getLCDSpiHz() const;
 
    public:
@@ -60,6 +63,7 @@ class ConfigManager {
     std::string filename;
     SecureStorage secure;
     uint8_t lcd_rotation = 4;
+    bool jpeg_mirror = true;
     std::string ntp_server;
 
     const char* getNtpServer() const { return ntp_server.c_str(); }

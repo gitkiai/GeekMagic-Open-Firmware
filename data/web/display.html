@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Display Settings</title>
+    <link rel="stylesheet" href="./css/pico.min.css" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <script src="./js/alpinejs.min.js" defer></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/themeSwitcher.js"></script>
+    <script src="./js/displayHandler.js"></script>
+    <script src="./js/main.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <header id="header-placeholder"></header>
+
+      <a href="./index.html" class="wifi-back-link">&larr; Back to Home</a>
+
+      <section x-data="displayHandler()" x-init="init()">
+        <h2>Display Settings</h2>
+
+        <label for="lcd-rotation">LCD Rotation</label>
+        <select id="lcd-rotation" x-model="lcdRotation" x-bind:disabled="loading">
+          <option value="0">0 &ndash; 0&deg;</option>
+          <option value="1">1 &ndash; 90&deg;</option>
+          <option value="2">2 &ndash; 180&deg;</option>
+          <option value="3">3 &ndash; 270&deg;</option>
+          <option value="4">4 &ndash; 0&deg; mirrored (HelloCubic default)</option>
+          <option value="5">5 &ndash; 90&deg; mirrored</option>
+          <option value="6">6 &ndash; 180&deg; mirrored</option>
+          <option value="7">7 &ndash; 270&deg; mirrored</option>
+        </select>
+
+        <label>
+          <input
+            type="checkbox"
+            role="switch"
+            x-model="jpegMirror"
+            x-bind:disabled="loading"
+          />
+          JPEG horizontal mirror
+        </label>
+
+        <div style="margin-top: 1em">
+          <button
+            type="button"
+            class="primary"
+            @click="saveConfig()"
+            x-bind:disabled="loading"
+          >
+            Save
+          </button>
+        </div>
+
+        <p x-text="message"></p>
+      </section>
+
+      <footer id="footer-placeholder"></footer>
+    </main>
+  </body>
+</html>

@@ -150,6 +150,7 @@ void setup() {
     webserver->serveStaticC("/wifi.html", "/web/wifi.html", "text/html");
     webserver->serveStaticC("/token.html", "/web/token.html", "text/html");
     webserver->serveStaticC("/ntp.html", "/web/ntp.html", "text/html");
+    webserver->serveStaticC("/display.html", "/web/display.html", "text/html");
     webserver->serveStaticC("/config.json", "/config.json", "application/json");
 
     webserver->registerStaticDir("/web/css", "/css", "text/css");

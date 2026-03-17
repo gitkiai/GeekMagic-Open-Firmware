@@ -326,6 +326,74 @@ paths:
       security:
         - bearerAuth: []
       description: "**Requires Authentication** - Cancel OTA. This endpoint requires a valid bearer token in the Authorization header."
+  /api/v1/display/config:
+    get:
+      summary: "Get display configuration"
+      operationId: "op_v1_get_api_v1_display_config"
+      responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  lcd_rotation:
+                    type: "integer"
+                  jpeg_mirror:
+                    type: "boolean"
+        401:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: "object"
+      tags:
+        - "Display"
+      security:
+        - bearerAuth: []
+      description: "**Requires Authentication** - Get display configuration. This endpoint requires a valid bearer token in the Authorization header."
+    post:
+      summary: "Set display configuration"
+      operationId: "op_v1_post_api_v1_display_config"
+      responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: "object"
+        400:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: "object"
+        401:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: "object"
+      tags:
+        - "Display"
+      security:
+        - bearerAuth: []
+      description: "**Requires Authentication** - Set display configuration. This endpoint requires a valid bearer token in the Authorization header."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                lcd_rotation:
+                  type: "integer"
+                jpeg_mirror:
+                  type: "boolean"
+              example:
+                lcd_rotation: 4
+                jpeg_mirror: true
+        required: true
   /api/v1/token/check:
     get:
       summary: "Check bearer token validity"
@@ -399,6 +467,8 @@ components:
 tags:
   - name: "Authentication"
     description: "API Authentication endpoints"
+  - name: "Display"
+    description: "API Display endpoints"
   - name: "NTP"
     description: "API NTP endpoints"
   - name: "OTA"

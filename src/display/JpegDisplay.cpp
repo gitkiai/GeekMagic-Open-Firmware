@@ -65,6 +65,8 @@ static int32_t jpegSeek(JPEGFILE* pFile, int32_t iPosition) {
     return iPosition;
 }
 
+extern ConfigManager configManager;
+
 static int jpegDraw(JPEGDRAW* pDraw) {
     auto* gfx = DisplayManager::getGfx();
     if (gfx == nullptr) {
@@ -75,17 +77,19 @@ static int jpegDraw(JPEGDRAW* pDraw) {
 
     uint16_t w = static_cast<uint16_t>(pDraw->iWidth);
     uint16_t h = static_cast<uint16_t>(pDraw->iHeight);
-    int16_t x = static_cast<int16_t>(LCD_W - pDraw->x - w);
+    bool mirror = configManager.getJpegMirror();
+    int16_t x = mirror ? static_cast<int16_t>(LCD_W - pDraw->x - w) : static_cast<int16_t>(pDraw->x);
     int16_t y = static_cast<int16_t>(pDraw->y);
 
     tft->startWrite();
     for (uint16_t row = 0; row < h; row++) {
         uint16_t* rowPixels = &pDraw->pPixels[row * w];
-        // Reverse pixel order in-place for horizontal flip
-        for (uint16_t i = 0; i < w / 2; i++) {
-            uint16_t tmp = rowPixels[i];
-            rowPixels[i] = rowPixels[w - 1 - i];
-            rowPixels[w - 1 - i] = tmp;
+        if (mirror) {
+            for (uint16_t i = 0; i < w / 2; i++) {
+                uint16_t tmp = rowPixels[i];
+                rowPixels[i] = rowPixels[w - 1 - i];
+                rowPixels[w - 1 - i] = tmp;
+            }
         }
         tft->writeAddrWindow(x, static_cast<int16_t>(y + row), w, 1);
         tft->writePixels(rowPixels, static_cast<uint32_t>(w));
